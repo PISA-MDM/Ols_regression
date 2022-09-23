@@ -14,7 +14,7 @@ library(jtools) # For plotting models only lme4
 # Read data 
 ###################################
 
-sdf <- readPISA(path = "C:/Users/bergm/OneDrive/Dokumente/Applied Data Science/05_Fr�hjahr 2022/Project Consulting Course/Data/PISA/2018",countries="DEU")
+sdf <- readPISA(path = "C:/Users/bergm/OneDrive/Dokumente/Applied Data Science/05_Frühjahr 2022/Project Consulting Course/Data/PISA/2018",countries="DEU")
 
 
 global.scales <- c("GCSELFEFF",#Self-efficacy regarding global issues (WLE)
@@ -58,7 +58,7 @@ control.vars <- str_to_lower(control.vars)
 pisa.sel <- EdSurvey::getData(data = sdf,
                                varnames = c(id.vars,wt.vars,global.scales,control.vars,pv),
                               omittedLevels = F, # Do not drop omitted levels
-                              returnJKreplicates = F) # don�t return replicate weights
+                              returnJKreplicates = F) # don´t return replicate weights
 
 
 # Object can be used in EdSurvey functions, if addAttributes = True
@@ -67,6 +67,57 @@ pisa.sel2 <- EdSurvey::getData(data = sdf,
                               omittedLevels = F,
                               returnJKreplicates = TRUE, # Necessary to make functions work
                               addAttributes = T) # dataframe can be used for EdSurvey functions
+
+
+
+########### mutate progn -Tatjana ##############
+attributes(pisa.sel$progn)$levels
+class(pisa.sel$cntschid)
+is.numeric(pisa.sel$progn)
+
+
+pisa.sel<- pisa.sel%>%
+  mutate(progn_ad = factor(case_when(progn == "GERMANY: LOWER SECONDARY COMPREHENSIVE, ACCESS TO UPPER SECONDARY; ACADEMIC EDUCATION" ~ "6", # Schule mit mehreren Bildungsgängen
+                              progn == "GERMANY: VOCATIONAL SCHOOL" ~ "7", #Berufsschule
+                              progn == "GERMANY: LOWER SECONDARY, SOME WITH ACCESS TO UPPER SECONDARY (SPECIAL EDUCATION)" ~ "1", #Förderschule
+                              progn == "GERMANY: UPPER SECONDARY (VOCATIONAL), QUALIFYING FOR SUBJECT-SPECIFIC TERTIARY EDUCATIO" ~ "4", #Gymnasium
+                              progn == "GERMANY: LOWER SECONDARY, SOME WITH ACCESS TO UPPER SECONDARY; BASIC GENERAL EDUCATION" ~ "2", #Hauptschule
+                              progn == "GERMANY: LOWER SECONDARY, EXPECTEDLY NO ACCESS TO UPPER; BASIC GENERAL EDUCATION" ~ "6", # Schule mit mehreren Bildungsgängen
+                              progn == "GERMANY: LOWER SECONDARY, ACCESS TO UPPER SECONDARY; EXTENSIVE GENERAL EDUCATION" ~ "3", #Realschule
+                              progn == "GERMANY: LOWER SECONDARY, EXPECTEDLY ACCESS TO UPPER; EXTENSIVE GENERAL EDUCATION" ~ "6", # Schule mit mehreren Bildungsgängen
+                              progn == "GERMANY: LOWER SECONDARY, ACCESS TO UPPER SECONDARY; ACADEMIC EDUCATION (EXCLUSIVELY STU" ~ "4", #Gymnasium
+                              progn == "GERMANY: LOWER SECONDARY, NO ACCESS TO UPPER; BASIC GENERAL EDUCATION (STUDENTS OF DIFFE" ~ "6", # Schule mit mehreren Bildungsgängen
+                              progn == "GERMANY: UPPER SECONDARY (EXCLUSIVELY STUDENTS OF THE SAME TRACK [CF. KEY 4])" ~ "4", #Gymnasium
+                              progn == "GERMANY: LOWER SECONDARY, ACCESS TO UPPER; EXTENSIVE GENERAL EDUCATION (STUDENTS OF DIFF" ~ "6", # Schule mit mehreren Bildungsgängen
+                              progn == "GERMANY: LOWER SECONDARY COMPREHENSIVE, ACHIEVEMENT-BASED ACCESS TO UPPER SECONDARY (WIT" ~ "5", #Integrierte Gesamtschule
+                              progn == "GERMANY: LOWER SECONDARY WITH ACCESS TO UPPER (WALDORF SCHOOL)" ~ "5", #Integrierte Gesamtschule
+                              progn == "GERMANY: LOWER SECONDARY COMPREHENSIVE, NO ACCESS TO UPPER; BASIC GENERAL EDUCATION (DIF" ~ "6", # Schule mit mehreren Bildungsgängen
+                              progn == "GERMANY: PRE-VOCATIONAL TRAINING YEAR UPPER SECONDARY LEVEL" ~ "7", #Berufsschule
+                              progn == "GERMANY: LOWER SECONDARY COMPREHENSIVE, ACCESS TO UPPER; EXTENSIVE GENERAL EDUCATION" ~ "6", # Schule mit mehreren Bildungsgängen
+                              progn == "GERMANY: VOCATIONAL SCHOOL UPPER SECONDARY LEVEL" ~ "7"))) #Berufsschule
+      
+
+
+#is progn a factor?
+class(pisa.sel$progn_ad)
+#yes!
+
+# 1. Förderschule (1), 
+# 2. Hauptschule(2), 
+# 3. Realschule(3), 
+# 4. Gymnasium(4,5,21), 
+# 5. Integrierte Gesamtschule(6-7,16-17), 
+# 6. Schule mit mehreren Bildungsgängen(8-15) and 
+# 7. Berufsschule (18-20)
+
+
+####### mutate ST001D01T",#Grade  -  Tatjana #########
+pisa.sel<- pisa.sel%>%
+  mutate(st001d01t = as.numeric(st001d01t),
+    st001d01t_ad = factor(case_when(st001d01t <= 9 ~ "Grade 7-9",
+                                     st001d01t >= 10 ~ "Grade 10-12")))
+
+head(pisa.sel$st001d01t_ad)
 
 ########
 # Demonstrating difference between pisa.sel & pisa.sel2
