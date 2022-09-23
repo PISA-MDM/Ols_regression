@@ -55,29 +55,128 @@ control.vars <- str_to_lower(control.vars)
 
 ### Get Data
 
-# pisa.sel <- EdSurvey::getData(data = sdf,
-#                                varnames = c(id.vars,wt.vars,global.scales,control.vars,pv),
-#                               omittedLevels = F, # Do not drop omitted levels
-#                               returnJKreplicates = F) # don?t return replicate weights
-# 
+pisa.sel <- EdSurvey::getData(data = sdf,
+                               varnames = c(id.vars,wt.vars,global.scales,control.vars,pv),
+                              omittedLevels = F, # Do not drop omitted levels
+                              returnJKreplicates = T) # Return replicate weights
+
 
 
 
 # Object can be used in EdSurvey functions, if addAttributes = True
-pisa.sel2 <- EdSurvey::getData(data = sdf,
-                               varnames = c(id.vars,wt.vars,global.scales,control.vars,pv),
-                              omittedLevels = F,
-                              returnJKreplicates = TRUE, # Necessary to make functions work
-                              addAttributes = T) # dataframe can be used for EdSurvey functions
+# pisa.sel2 <- EdSurvey::getData(data = sdf,
+#                                varnames = c(id.vars,wt.vars,global.scales,control.vars,pv),
+#                               omittedLevels = F,
+#                               returnJKreplicates = TRUE, # Necessary to make functions work
+#                               addAttributes = T) # dataframe can be used for EdSurvey functions
 
 
+########### mutate progn -Tatjana ##############
+attributes(pisa.sel$progn)$levels
+class(pisa.sel$cntschid)
+is.numeric(pisa.sel$progn)
+
+
+pisa.sel<- pisa.sel%>%
+  mutate(progn_ad = factor(case_when(progn == "GERMANY: LOWER SECONDARY COMPREHENSIVE, ACCESS TO UPPER SECONDARY; ACADEMIC EDUCATION" ~ "6", # Schule mit mehreren Bildungsgängen
+                                     progn == "GERMANY: VOCATIONAL SCHOOL" ~ "7", #Berufsschule
+                                     progn == "GERMANY: LOWER SECONDARY, SOME WITH ACCESS TO UPPER SECONDARY (SPECIAL EDUCATION)" ~ "1", #Förderschule
+                                     progn == "GERMANY: UPPER SECONDARY (VOCATIONAL), QUALIFYING FOR SUBJECT-SPECIFIC TERTIARY EDUCATIO" ~ "4", #Gymnasium
+                                     progn == "GERMANY: LOWER SECONDARY, SOME WITH ACCESS TO UPPER SECONDARY; BASIC GENERAL EDUCATION" ~ "2", #Hauptschule
+                                     progn == "GERMANY: LOWER SECONDARY, EXPECTEDLY NO ACCESS TO UPPER; BASIC GENERAL EDUCATION" ~ "6", # Schule mit mehreren Bildungsgängen
+                                     progn == "GERMANY: LOWER SECONDARY, ACCESS TO UPPER SECONDARY; EXTENSIVE GENERAL EDUCATION" ~ "3", #Realschule
+                                     progn == "GERMANY: LOWER SECONDARY, EXPECTEDLY ACCESS TO UPPER; EXTENSIVE GENERAL EDUCATION" ~ "6", # Schule mit mehreren Bildungsgängen
+                                     progn == "GERMANY: LOWER SECONDARY, ACCESS TO UPPER SECONDARY; ACADEMIC EDUCATION (EXCLUSIVELY STU" ~ "4", #Gymnasium
+                                     progn == "GERMANY: LOWER SECONDARY, NO ACCESS TO UPPER; BASIC GENERAL EDUCATION (STUDENTS OF DIFFE" ~ "6", # Schule mit mehreren Bildungsgängen
+                                     progn == "GERMANY: UPPER SECONDARY (EXCLUSIVELY STUDENTS OF THE SAME TRACK [CF. KEY 4])" ~ "4", #Gymnasium
+                                     progn == "GERMANY: LOWER SECONDARY, ACCESS TO UPPER; EXTENSIVE GENERAL EDUCATION (STUDENTS OF DIFF" ~ "6", # Schule mit mehreren Bildungsgängen
+                                     progn == "GERMANY: LOWER SECONDARY COMPREHENSIVE, ACHIEVEMENT-BASED ACCESS TO UPPER SECONDARY (WIT" ~ "5", #Integrierte Gesamtschule
+                                     progn == "GERMANY: LOWER SECONDARY WITH ACCESS TO UPPER (WALDORF SCHOOL)" ~ "5", #Integrierte Gesamtschule
+                                     progn == "GERMANY: LOWER SECONDARY COMPREHENSIVE, NO ACCESS TO UPPER; BASIC GENERAL EDUCATION (DIF" ~ "6", # Schule mit mehreren Bildungsgängen
+                                     progn == "GERMANY: PRE-VOCATIONAL TRAINING YEAR UPPER SECONDARY LEVEL" ~ "7", #Berufsschule
+                                     progn == "GERMANY: LOWER SECONDARY COMPREHENSIVE, ACCESS TO UPPER; EXTENSIVE GENERAL EDUCATION" ~ "6", # Schule mit mehreren Bildungsgängen
+                                     progn == "GERMANY: VOCATIONAL SCHOOL UPPER SECONDARY LEVEL" ~ "7"))) #Berufsschule
+
+
+# Relevel to baseline 2
+pisa.sel$progn_ad <- relevel(pisa.sel$progn_ad, ref="2")
+
+#is progn a factor?
+class(pisa.sel$progn_ad)
+#yes!
+
+# 1. Förderschule (1), 
+# 2. Hauptschule(2), 
+# 3. Realschule(3), 
+# 4. Gymnasium(4,5,21), 
+# 5. Integrierte Gesamtschule(6-7,16-17), 
+# 6. Schule mit mehreren Bildungsgängen(8-15) and 
+# 7. Berufsschule (18-20)
+
+
+
+### PROGN with German school names
+
+
+pisa.sel<- pisa.sel%>%
+  mutate(progn_de = factor(case_when(progn == "GERMANY: LOWER SECONDARY COMPREHENSIVE, ACCESS TO UPPER SECONDARY; ACADEMIC EDUCATION" ~ "Schule mit mehreren Bildungsgängen", # 6
+                                     progn == "GERMANY: VOCATIONAL SCHOOL" ~ "Berufsschule", #7
+                                     progn == "GERMANY: LOWER SECONDARY, SOME WITH ACCESS TO UPPER SECONDARY (SPECIAL EDUCATION)" ~ "Förderschule", #1
+                                     progn == "GERMANY: UPPER SECONDARY (VOCATIONAL), QUALIFYING FOR SUBJECT-SPECIFIC TERTIARY EDUCATIO" ~ "Gymnasium", # 4
+                                     progn == "GERMANY: LOWER SECONDARY, SOME WITH ACCESS TO UPPER SECONDARY; BASIC GENERAL EDUCATION" ~ "Hauptschule", # 2
+                                     progn == "GERMANY: LOWER SECONDARY, EXPECTEDLY NO ACCESS TO UPPER; BASIC GENERAL EDUCATION" ~ "Schule mit mehreren Bildungsgängen", # 6
+                                     progn == "GERMANY: LOWER SECONDARY, ACCESS TO UPPER SECONDARY; EXTENSIVE GENERAL EDUCATION" ~ "Realschule", # 3
+                                     progn == "GERMANY: LOWER SECONDARY, EXPECTEDLY ACCESS TO UPPER; EXTENSIVE GENERAL EDUCATION" ~ "Schule mit mehreren Bildungsgängen", # 6
+                                     progn == "GERMANY: LOWER SECONDARY, ACCESS TO UPPER SECONDARY; ACADEMIC EDUCATION (EXCLUSIVELY STU" ~ "Gymnasium", # 4
+                                     progn == "GERMANY: LOWER SECONDARY, NO ACCESS TO UPPER; BASIC GENERAL EDUCATION (STUDENTS OF DIFFE" ~ "Schule mit mehreren Bildungsgängen", # 6
+                                     progn == "GERMANY: UPPER SECONDARY (EXCLUSIVELY STUDENTS OF THE SAME TRACK [CF. KEY 4])" ~ "Gymnasium", # 4
+                                     progn == "GERMANY: LOWER SECONDARY, ACCESS TO UPPER; EXTENSIVE GENERAL EDUCATION (STUDENTS OF DIFF" ~ "Schule mit mehreren Bildungsgängen", # 6
+                                     progn == "GERMANY: LOWER SECONDARY COMPREHENSIVE, ACHIEVEMENT-BASED ACCESS TO UPPER SECONDARY (WIT" ~ "Integrierte Gesamtschule", # 5
+                                     progn == "GERMANY: LOWER SECONDARY WITH ACCESS TO UPPER (WALDORF SCHOOL)" ~ "Integrierte Gesamtschule", #5
+                                     progn == "GERMANY: LOWER SECONDARY COMPREHENSIVE, NO ACCESS TO UPPER; BASIC GENERAL EDUCATION (DIF" ~ "Schule mit mehreren Bildungsgängen", # 6
+                                     progn == "GERMANY: PRE-VOCATIONAL TRAINING YEAR UPPER SECONDARY LEVEL" ~ "Berufsschule", # 7
+                                     progn == "GERMANY: LOWER SECONDARY COMPREHENSIVE, ACCESS TO UPPER; EXTENSIVE GENERAL EDUCATION" ~ "Schule mit mehreren Bildungsgängen", # 6
+                                     progn == "GERMANY: VOCATIONAL SCHOOL UPPER SECONDARY LEVEL" ~ "Berufsschule"))) # 7
+
+
+# Relevel to baseline Hauptschule
+pisa.sel$progn_de <- relevel(pisa.sel$progn_de, ref="Hauptschule")
+
+
+
+####### mutate ST001D01T",#Grade  -  Tatjana #########
+pisa.sel<- pisa.sel%>%
+  mutate(#st001d01t = as.numeric(st001d01t),
+         st001d01t_ad = factor(case_when(st001d01t <= 9 ~ "Grade 7-9",
+                                         st001d01t >= 10 ~ "Grade 10-12")))
+
+# Relevel to baseline Hauptschule
+pisa.sel$st001d01t_ad <- relevel(pisa.sel$st001d01t_ad, ref="Grade 7-9")
+
+
+
+##########################################################
+######### Rebinding attributes to use EdSurvey functions
+##########################################################
+pisa.sel <- rebindAttributes(pisa.sel, sdf)
+
+
+#############################################
+# Get summary statistics for new variables
+ 
+summary2(data = pisa.sel, variable = "progn_de")
+summary2(data = pisa.sel, variable = "st001d01t_ad")
+# EdSurvey functions work fine
 
 
 #delete cases with missing values
 omitted2018 <- getAttributes(sdf,'omittedLevels')
 
 # save full dataset separately
-pisa.full <- pisa.sel2
+pisa.full <- pisa.sel
+
+# Create copy for regressions
+pisa.sel2 <- pisa.sel
 
 
 for (i in 1:ncol(pisa.sel2)) {
@@ -92,25 +191,24 @@ length(full.cases) # 2034
 # Demonstrating difference between pisa.sel & pisa.sel2
 
 #lm.sdf(formula = pv1read ~ gcselfeff, data = pisa.sel) # Does not work
-lm.sdf(formula = pv1read ~ gcselfeff, data = pisa.sel2) # Function can be used
+lm.sdf(formula = pv1read ~ gcselfeff, data = pisa.sel) # Function can be used after rebinding attributes
 
 
 ######################################################
-# Running regressiosn for global competence scales
+# Running regressions for global competence scales 
+## with REDUCED DATASET !!!!
 #####################################################
 global.scales
 
 lm.gcselfeff <- lm.sdf(formula = pv1read ~ gcselfeff, data = pisa.sel2)
 summary(lm.gcselfeff)
-# Multiple R-squared: 0.105
-
-
+# Multiple R-squared: 0.0858
 
 
 # Using all scales
 lm.global.scales <- lm.sdf(formula = pv1read ~ gcselfeff + gcaware + perspect + cogflex + awacom + intcult + respect +globmind +  attimm, data = pisa.sel2)
 summary(lm.global.scales)
-# Multiple R-squared: 0.188
+# Multiple R-squared: 0.1926
 
 
 #####################################################################
@@ -119,11 +217,17 @@ summary(lm.global.scales)
 control.vars
 
 # progn
-levelsSDF(varnames = "progn", data = pisa.sel2)
-
+# levelsSDF(varnames = "progn", data = pisa.sel2)
+# Original
 lm.progn <- lm.sdf(formula = pv1read ~ progn, data = pisa.sel2)
 summary(lm.progn)
 # Multiple R-squared: 0.3526
+
+## progn_de after recoding - Baseline Hauptschule
+lm.progn_de <- lm.sdf(formula = pv1read ~ progn_de, data = pisa.sel2)
+summary(lm.progn_de)
+# Multiple R-squared: 0.3266
+# Significant differences only to Realschule und Gymnasium
 
 
 # st001d01t
@@ -133,6 +237,13 @@ levelsSDF(varnames = "st001d01t", data = pisa.sel2)
 lm.grade <- lm.sdf(formula = pv1read ~ st001d01t, data = pisa.sel2)
 summary(lm.grade) # compared to baselevel grade 7
 # Multiple R-squared: 0.0946
+
+ 
+lm.grade_ad<- lm.sdf(formula = pv1read ~ st001d01t_ad, data = pisa.sel2)
+summary(lm.grade_ad) # compared to baselevel grade 7
+# Multiple R-squared: 0.0591
+
+
 
 # st004d01t
 # Gender
@@ -177,10 +288,10 @@ summary(lm.sc048)
 #####################################################
 control.vars
 
-lm.control.vars <- lm.sdf(pv1read ~ progn + st001d01t + st004d01t + hisei + immig + repeatgrade + sc048q01na, data = pisa.sel2 )
+lm.control.vars <- lm.sdf(pv1read ~ progn_de + st001d01t_ad + st004d01t + hisei + immig + repeatgrade + sc048q01na, data = pisa.sel2 )
 
 summary(lm.control.vars)
-# Multiple R-squared: 0.4246
+# Multiple R-squared:  0.3968
 
 ###################### 
 # Optional - needs to be aligned with Julia
@@ -192,10 +303,21 @@ summary(lm.control.vars)
 
 ## Effect of global competence after controlling for control.vars
 
-lm.gcselfeff.controlled <- lm.sdf(pv1read ~ gcselfeff + progn + st001d01t + st004d01t + hisei + immig + repeatgrade + sc048q01na , data = pisa.sel2)
+lm.gcselfeff.controlled <- lm.sdf(pv1read ~ gcselfeff + progn_de + st001d01t_ad + st004d01t + hisei + immig + repeatgrade + sc048q01na , data = pisa.sel2)
 summary(lm.gcselfeff.controlled)
 # Effect still significant
-# Multiple R-squared: 0.4379
+# Multiple R-squared: 0.4134
+
+
+
+
+
+
+###############################################
+### Optional - Sensitivity analysis ###########
+###############################################
+
+
 
 
 ######################################################
@@ -360,139 +482,4 @@ summary(lm.gcselfeff.controlled)
 
 
 
-
-
-
-
-
-
-################################################################
-##################################################################
-###### Combining grade 7,8,9 and 10,11,12 ######################
-##################################################################
-pisa.sel3 <- pisa.sel2
-
-
-pisa.sel3$GRADE.binary <- ifelse(pisa.sel3$st001d01t %in% c("GRADE 7","GRADE 8", "GRADE 9"),
-                                 "LowerGrade", "HigherGrade")
-
-
-#delete cases with missing values
-omitted2018 <- getAttributes(sdf,'omittedLevels')
-
-
-for (i in 1:ncol(pisa.sel3)) {
-  pisa.sel3 <- pisa.sel3[!pisa.sel3[,i] %in% omitted2018,]
-}
-
-
-length(pisa.sel3$cntstuid) 
-# Dataset back to 2034 cases
-
-pisa.sel3 <- rebindAttributes(pisa.sel3, sdf)
-
-
-######################################################
-# Running regressions for global competence scales
-#####################################################
-#global.scales
-
-lm.gcselfeff <- lm.sdf(formula = pv1read ~ gcselfeff, data = pisa.sel3)
-summary(lm.gcselfeff)
-# Multiple R-squared: 0.0858
-
-
-
-
-# Using all scales
-lm.global.scales <- lm.sdf(formula = pv1read ~ gcselfeff + gcaware + perspect + cogflex + awacom + intcult + respect +globmind +  attimm, 
-                           data = pisa.sel3)
-summary(lm.global.scales)
-# Multiple R-squared: 0.1926
-
-
-
-#####################################################################
-### Running regressions for control variables 
-###################################################################
-control.vars
-
-# progn
-lm.progn <- lm.sdf(formula = pv1read ~ progn, data = pisa.sel3)
-summary(lm.progn)
-# Multiple R-squared: 0.3526
-
-
-###################################################################
-### GRADE.binary 
-# Releveling to compare to base GRADE7-9 does not work
-# Grade
-summary2(pisa.sel3, "GRADE.binary")
-
-lm.grade <- lm.sdf(formula = pv1read ~ GRADE.binary, 
-                #   relevels = list(GRADE.binary = "LowerGrade"),
-                   data = pisa.sel3)
-summary(lm.grade) # compared to baseline HigherGrade
-# Multiple R-squared:0.0591
-
-
-# st004d01t
-# Gender
-lm.gender <- lm.sdf(pv1read ~ st004d01t, data = pisa.sel3)
-summary(lm.gender)
-# Multiple R-squared: 0.0104
-
-# hisei
-lm.hisei <- lm.sdf(formula = pv1read ~ hisei, data = pisa.sel3)
-summary(lm.hisei)
-# Multiple R-squared: 0.1416
-
-
-# immig
-lm.immig <- lm.sdf(pv1read ~ immig, data = pisa.sel3)
-summary(lm.immig)
-# Multiple R-squared: 0.033
-
-
-# repeatgrade
-lm.repeatgrade <- lm.sdf(formula = pv1read ~ repeatgrade, data = pisa.sel3)
-summary(lm.repeatgrade)
-# Multiple R-squared:  0.0364
-
-
-# sc048q01na - pct of students whose heritage language is different from test language
-
-lm.sc048 <- lm.sdf(formula = pv1read ~ sc048q01na, data = pisa.sel3)
-summary(lm.sc048)
-# Multiple R-squared:  0.0648
-# sig only on .001
-
-
-
-######################################################
-## Combined control variables #######################
-#####################################################
-control.vars
-
-lm.control.vars <- lm.sdf(pv1read ~ progn + GRADE.binary + st004d01t + hisei + immig + repeatgrade + sc048q01na, 
-                          data = pisa.sel3 )
-
-summary(lm.control.vars)
-# Multiple R-squared: 0.4163
-
-###################### 
-# Optional - needs to be aligned with Julia
-# Using standardized regression coefficients
-summary(lm.control.vars, src = TRUE)
-#####################
-
-
-
-## Effect of global competence after controlling for control.vars
-
-lm.gcselfeff.controlled <- lm.sdf(pv1read ~ gcselfeff + progn + GRADE.binary + st004d01t + hisei + immig + repeatgrade + sc048q01na , 
-                                  data = pisa.sel3)
-summary(lm.gcselfeff.controlled)
-# Effect still significant
-# Multiple R-squared: 0.4308
 
