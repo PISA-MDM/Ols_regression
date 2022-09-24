@@ -205,5 +205,11 @@ summary2(data = pisa.sel, variable = "hisei")
 # Average hisei
 summary2(data = pisa.sel, variable = "avg_hisei")
 
+# sc048q01na - pct of students whose heritage language is different from test language
+summary2(variable = "sc048q01na", data = pisa.sel)
+
+
 # Progn_de
 summary2(data = pisa.sel, variable = "progn_de")
+
+
