@@ -154,6 +154,9 @@ pisa.sel<- pisa.sel%>%
 pisa.sel$st001d01t_ad <- relevel(pisa.sel$st001d01t_ad, ref="Grade 7-9")
 
 
+# calculate school hisei
+pisa.sel <- pisa.sel %>% group_by(cntschid) %>% mutate(avg_hisei = mean(hisei, na.rm = TRUE)) %>% ungroup()
+
 
 ##########################################################
 ######### Rebinding attributes to use EdSurvey functions
@@ -184,8 +187,16 @@ for (i in 1:ncol(pisa.sel2)) {
 }
 
 
-full.cases <- pisa.sel2$cntstuid
+full.cases <- pisa.sel2
 length(full.cases) # 2034
+
+# Number of schools
+length(unique(pisa.sel2$cntschid))
+
+# Descriptive statistics of full cases
+t <- pisa.sel2 %>% group_by(cntschid) %>% summarize(number_stu = n()) %>% ungroup
+summary(t$number_stu)
+sd(t$number_stu)
 
 ########
 # Demonstrating difference between pisa.sel & pisa.sel2
@@ -293,10 +304,22 @@ lm.control.vars <- lm.sdf(pv1read ~ progn_de + st001d01t_ad + st004d01t + hisei 
 summary(lm.control.vars)
 # Multiple R-squared:  0.3968
 
+
+######################################################
+## Effect of global competence after controlling for control.vars
+######################################################
+
+
+lm.gcselfeff.controlled <- lm.sdf(pv1read ~ gcselfeff + progn_de + st001d01t_ad + st004d01t + hisei + immig + repeatgrade + sc048q01na , data = pisa.sel2)
+summary(lm.gcselfeff.controlled)
+# Effect still significant
+# Multiple R-squared: 0.4043
+
+
 ###################### 
 # Optional - needs to be aligned with Julia
 # Using standardized regression coefficients
-# summary(lm.control.vars, src = TRUE)
+summary(lm.gcselfeff.controlled, src = TRUE)
 #####################
 
 
@@ -313,9 +336,25 @@ summary(lm.gcselfeff.controlled)
 
 
 
+###################### 
+# Optional - needs to be aligned with Julia
+# Using standardized regression coefficients
+ summary(lm.control.vars, src = TRUE)
+
+
+
+
+
+
+
+
+
+
+
 ###############################################
 ### Optional - Sensitivity analysis ###########
 ###############################################
+
 
 
 
