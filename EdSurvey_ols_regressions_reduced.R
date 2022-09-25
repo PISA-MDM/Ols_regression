@@ -14,6 +14,7 @@ library(jtools) # For plotting models only lme4
 # Read data 
 ###################################
 
+# Path needs to be adjusted by user
 sdf <- readPISA(path = "C:/Users/bergm/OneDrive/Dokumente/Applied Data Science/05_Frühjahr 2022/Project Consulting Course/Data/PISA/2018",countries="DEU")
 
 
@@ -345,22 +346,6 @@ summary(lm.gcselfeff.controlled, src = TRUE)
 
 
 
-## Effect of global competence after controlling for control.vars
-
-lm.gcselfeff.controlled <- lm.sdf(pv1read ~ gcselfeff + progn_de + st001d01t_ad + st004d01t + hisei + immig + repeatgrade + sc048q01na , data = pisa.sel2)
-summary(lm.gcselfeff.controlled)
-# Effect still significant
-# Multiple R-squared: 0.4134
-
-
-
-
-
-
-###################### 
-# Optional - needs to be aligned with Julia
-# Using standardized regression coefficients
- summary(lm.control.vars, src = TRUE)
 
 
 
