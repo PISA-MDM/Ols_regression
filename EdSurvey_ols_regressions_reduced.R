@@ -71,6 +71,21 @@ pisa.sel <- EdSurvey::getData(data = sdf,
 #                               addAttributes = T) # dataframe can be used for EdSurvey functions
 
 
+
+############################################
+# Demonstrating difference between pisa.sel & pisa.sel2
+
+# lm.sdf(formula = pv1read ~ gcselfeff, data = pisa.sel) # Does not work without rebinding attribures first
+# m.sdf(formula = pv1read ~ gcselfeff, data = pisa.sel2) # EdSurvey functions can be used, because of  returnJKreplicates = TRUE and  addAttributes = TRUE
+###########################################
+
+
+############################################
+#### Start of data preparation ##############
+###########################################
+
+
+
 ########### mutate progn -Tatjana ##############
 attributes(pisa.sel$progn)$levels
 class(pisa.sel$cntschid)
@@ -158,6 +173,7 @@ pisa.sel$st001d01t_ad <- relevel(pisa.sel$st001d01t_ad, ref="Grade 7-9")
 pisa.sel <- pisa.sel %>% group_by(cntschid) %>% mutate(avg_hisei = mean(hisei, na.rm = TRUE)) %>% ungroup()
 
 
+
 ##########################################################
 ######### Rebinding attributes to use EdSurvey functions
 ##########################################################
@@ -165,12 +181,16 @@ pisa.sel <- rebindAttributes(pisa.sel, sdf)
 
 
 #############################################
-# Get summary statistics for new variables
+# Test - get summary statistics for new variables
  
 summary2(data = pisa.sel, variable = "progn_de")
 summary2(data = pisa.sel, variable = "st001d01t_ad")
 # EdSurvey functions work fine
 
+
+##################################
+## Prepare complete case analyis
+#################################
 
 #delete cases with missing values
 omitted2018 <- getAttributes(sdf,'omittedLevels')
@@ -188,7 +208,7 @@ for (i in 1:ncol(pisa.sel2)) {
 
 
 full.cases <- pisa.sel2
-length(full.cases) # 2034
+length(full.cases) # 2034 obs
 
 # Number of schools
 length(unique(pisa.sel2$cntschid))
@@ -198,11 +218,12 @@ t <- pisa.sel2 %>% group_by(cntschid) %>% summarize(number_stu = n()) %>% ungrou
 summary(t$number_stu)
 sd(t$number_stu)
 
-########
-# Demonstrating difference between pisa.sel & pisa.sel2
 
-#lm.sdf(formula = pv1read ~ gcselfeff, data = pisa.sel) # Does not work
-lm.sdf(formula = pv1read ~ gcselfeff, data = pisa.sel) # Function can be used after rebinding attributes
+############################################
+#### End of data preparation ##############
+###########################################
+
+
 
 
 ######################################################
