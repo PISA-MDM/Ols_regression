@@ -361,15 +361,41 @@ summary(lm.gcselfeff.controlled, src = TRUE)
 ### Optional - Sensitivity analysis ###########
 ###############################################
 
+######################################################
+# 1. Create binay immig variable
+######################################################
 
+
+# Immigration dummy variable
+pisa.sel$dummy.immig <- ifelse(pisa.sel$immig %in% c("SECOND-GENERATION",
+                                                     "FIRST-GENERATION"), "MIGRATION-BACKROUND",
+                               "NATIVE")
+# Numeric immig dummy
+pisa.sel$dummy.immig.num <- ifelse(pisa.sel$dummy.immig == "NATIVE",0,1)
 
 
 
 ######################################################
+# 2. Create two dichotomous grade 9 / grade 10 dummy variables
+######################################################
+
+
+# Dummy variables for grade 9/10
+pisa.sel <- pisa.sel %>% 
+  mutate(G9 = ifelse(st001d01t == "GRADE 9",1,0),
+         G9_fct = factor(G9,labels = c("Other","G9")),
+         G10 = ifelse(st001d01t == "GRADE 10", 1,0),
+         G10_fct = factor(G10, labels = c("Other","G10")))
+
+
+
+
+
+
+####################################################
 ###################################################
 # Subsetting Grades 9 & 10 only ##########################
 ##################################################
-####################################################
 
 summary2(data = sdf, variable = "st001d01t")
 
