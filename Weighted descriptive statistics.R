@@ -213,3 +213,88 @@ summary2(variable = "sc048q01na", data = pisa.sel)
 summary2(data = pisa.sel, variable = "progn_de")
 
 
+##################################
+## Prepare complete case analyis
+#################################
+
+#delete cases with missing values
+omitted2018 <- getAttributes(sdf,'omittedLevels')
+
+# save full dataset separately
+pisa.full <- pisa.sel
+
+# Create copy for regressions
+pisa.sel2 <- pisa.sel
+
+
+for (i in 1:ncol(pisa.sel2)) {
+  pisa.sel2 <- pisa.sel2[!pisa.sel2[,i] %in% omitted2018,]
+}
+
+
+length(pisa.sel2$cntstuid) # 2034 obs
+
+######################################################
+## Run descriptive statistics for complete cases vs full dataset
+#######################################################
+
+# pisa.sel = full dataset
+# pisa.sel2 = complete cases
+
+# pv1read
+summary2(data = pisa.sel2, variable = "pv1read", weightVar = NULL) 
+summary2(data = pisa.sel, variable = "pv1read", weightVar = NULL)
+
+
+# Global competence scale
+summary2(data = pisa.sel2, variable = "gcselfeff", weightVar = NULL)
+summary2(data = pisa.sel, variable = "gcselfeff", weightVar = NULL)
+
+
+# Gender - st004d01t
+summary2(data = pisa.sel2, variable = "st004d01t", weightVar = NULL)
+summary2(data = pisa.sel, variable = "st004d01t", weightVar = NULL)
+
+
+# Immig
+summary2(data = pisa.sel2, variable = "immig", weightVar = NULL)
+summary2(data = pisa.sel, variable = "immig", weightVar = NULL)
+
+
+# st001d01t
+summary2(data = pisa.sel2, variable = "st001d01t", weightVar = NULL)
+summary2(data = pisa.sel, variable = "st001d01t", weightVar = NULL)
+
+
+# st001d01t_ad
+summary2(data = pisa.sel2, variable = "st001d01t_ad", weightVar = NULL)
+summary2(data = pisa.sel, variable = "st001d01t_ad", weightVar = NULL)
+
+
+# repeatgrade
+summary2(data = pisa.sel2, variable = "repeatgrade", weightVar = NULL)
+summary2(data = pisa.sel, variable = "repeatgrade", weightVar = NULL)
+
+
+# hisei
+summary2(data = pisa.sel2, variable = "hisei", weightVar = NULL)
+summary2(data = pisa.sel, variable = "hisei", weightVar = NULL)
+
+
+# Average hisei
+summary2(data = pisa.sel2, variable = "avg_hisei", weightVar = NULL)
+summary2(data = pisa.sel, variable = "avg_hisei", weightVar = NULL)
+
+
+# sc048q01na - pct of students whose heritage language is different from test language
+summary2(variable = "sc048q01na", data = pisa.sel2, weightVar = NULL)
+summary2(variable = "sc048q01na", data = pisa.sel, weightVar = NULL)
+
+
+# Progn_de
+summary2(data = pisa.sel2, variable = "progn_de", weightVar = NULL)
+summary2(data = pisa.sel, variable = "progn_de", weightVar = NULL)
+
+
+
+
