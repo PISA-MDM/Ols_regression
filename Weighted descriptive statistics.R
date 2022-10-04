@@ -6,33 +6,36 @@ library(lme4)
 library(WeMix)
 library(flexplot) # get statistics for hlm
 library(tidyverse)
-library(sjPlot) # For plotting models only lme4
-library(jtools) # For plotting models only lme4
+#library(sjPlot) # For plotting models only lme4
+#library(jtools) # For plotting models only lme4
+
 
 
 #####################################
 # Read data 
 ###################################
 
+# Path needs to be adjusted by user
 sdf <- readPISA(path = "C:/Users/bergm/OneDrive/Dokumente/Applied Data Science/05_Frühjahr 2022/Project Consulting Course/Data/PISA/2018",countries="DEU")
+#sdf <- readPISA(path = "C:/Users/isr/Desktop/Training IPSDS/Master project/pisa2018/data",countries="DEU")
 
 
-global.scales <- c("GCSELFEFF",#Self-efficacy regarding global issues (WLE)
-                   "GCAWARE",#Student's awareness of global issues (WLE)
-                   "PERSPECT",#Perspective-taking (WLE)
-                   "COGFLEX",#Cognitive flexibility/adaptability (WLE)
-                   "AWACOM",#Awareness of intercultural communication (WLE)
-                   "INTCULT",#Student's interest in learning about other cultures (WLE)
-                   "RESPECT",#Respect for people from other cultures (WLE)
-                   "GLOBMIND",#Global-mindedness (WLE)
-                   "ATTIMM")
+global.scales <- c("GCSELFEFF")#Self-efficacy regarding global issues (WLE)
+#  "GCAWARE",#Student's awareness of global issues (WLE)
+# "PERSPECT",#Perspective-taking (WLE)
+#  "COGFLEX",#Cognitive flexibility/adaptability (WLE)
+#  "AWACOM",#Awareness of intercultural communication (WLE)
+#  "INTCULT",#Student's interest in learning about other cultures (WLE)
+#  "RESPECT",#Respect for people from other cultures (WLE)
+#  "GLOBMIND",#Global-mindedness (WLE)
+#  "ATTIMM")
 global.scales <- str_to_lower(global.scales)
 
 pv <- c("PV1READ" , "PV2READ", "PV3READ", "PV4READ", "PV5READ" , "PV6READ", "PV7READ", "PV8READ", "PV9READ" , "PV10READ")
 pv <- str_to_lower(pv)
 
 
-id.vars <- c("cntschid","cntstuid")
+id.vars <- c("cntryid","cnt","cntschid","cntstuid")
 
 
 wt.vars <- c("w_fstuwt", #FINAL TRIMMED NONRESPONSE ADJUSTED STUDENT WEIGHT
@@ -41,12 +44,12 @@ wt.vars <- c("w_fstuwt", #FINAL TRIMMED NONRESPONSE ADJUSTED STUDENT WEIGHT
 
 control.vars <- c("ST001D01T",#Grade
                   "ST004D01T",#Student (Standardized) Gender
-                  "HISCED",#Highest Education of parents (ISCED)
+                  # "HISCED",#Highest Education of parents (ISCED)
                   "HISEI",#Highest International Socio-Economic Index of Occupational Status
-                  "PARED",#Index highest parental education in years of schooling
+                  #  "PARED",#Index highest parental education in years of schooling
                   "IMMIG",#Index Immigration status
-                  "ST127Q01TA",#Have you ever repeated a <grade>? At <ISCED 1>
-                  "ST127Q02TA",#Have you ever repeated a <grade>? At <ISCED 2>
+                  #  "ST127Q01TA",#Have you ever repeated a <grade>? At <ISCED 1>
+                  #  "ST127Q02TA",#Have you ever repeated a <grade>? At <ISCED 2>
                   "repeatgrade",
                   "progn",  # School classification
                   "SC048Q01NA") # Percentage <national modal grade for 15-year-olds>: Students whose <heritage language> is different from <test language
@@ -69,6 +72,21 @@ pisa.sel <- EdSurvey::getData(data = sdf,
 #                               omittedLevels = F,
 #                               returnJKreplicates = TRUE, # Necessary to make functions work
 #                               addAttributes = T) # dataframe can be used for EdSurvey functions
+
+
+
+############################################
+# Demonstrating difference between pisa.sel & pisa.sel2
+
+# lm.sdf(formula = pv1read ~ gcselfeff, data = pisa.sel) # Does not work without rebinding attribures first
+# m.sdf(formula = pv1read ~ gcselfeff, data = pisa.sel2) # EdSurvey functions can be used, because of  returnJKreplicates = TRUE and  addAttributes = TRUE
+###########################################
+
+
+############################################
+#### Start of data preparation ##############
+###########################################
+
 
 
 ########### mutate progn -Tatjana ##############
@@ -155,15 +173,76 @@ pisa.sel$st001d01t_ad <- relevel(pisa.sel$st001d01t_ad, ref="Grade 7-9")
 
 
 # calculate school hisei
-pisa.sel <- pisa.sel %>% group_by(cntschid) %>% mutate(avg_hisei = mean(hisei, na.rm = TRUE)) %>% ungroup()
+# hisei_gc = group-mean centered
+pisa.sel <- pisa.sel %>% group_by(cntschid) %>% mutate(avg_hisei = mean(hisei, na.rm = TRUE),
+                                                       hisei_gc = hisei - avg_hisei) %>% ungroup()
 
 
+# Check group mean centering
+pisa.hisei <- pisa.sel %>% select(hisei, avg_hisei, hisei_gc)
 
+# Show school average hisei
+pisa.sel %>% 
+  group_by(cntschid) %>% 
+  summarise(avg_hisei = mean(hisei, na.rm = TRUE)) %>% ungroup
 
 ##########################################################
 ######### Rebinding attributes to use EdSurvey functions
 ##########################################################
 pisa.sel <- rebindAttributes(pisa.sel, sdf)
+
+
+#############################################
+# Test - get summary statistics for new variables
+
+summary2(data = pisa.sel, variable = "progn_de")
+summary2(data = pisa.sel, variable = "st001d01t_ad")
+summary2(data = pisa.sel, variable = "avg_hisei")
+# EdSurvey functions work fine
+
+
+##################################
+## Prepare complete case analyis
+#################################
+
+#delete cases with missing values
+omitted2018 <- getAttributes(sdf,'omittedLevels')
+
+# save full dataset separately
+pisa.full <- pisa.sel
+
+# Create copy for regressions
+pisa.sel2 <- pisa.sel
+
+
+for (i in 1:ncol(pisa.sel2)) {
+  pisa.sel2 <- pisa.sel2[!pisa.sel2[,i] %in% omitted2018,]
+}
+
+
+full.cases <- pisa.sel2
+length(full.cases$cntstuid) # 2989 obs
+
+# Number of schools
+length(unique(pisa.sel2$cntschid))
+
+# Descriptive statistics of full cases
+t <- pisa.sel2 %>% group_by(cntschid) %>% summarize(number_stu = n()) %>% ungroup
+summary(t$number_stu)
+sd(t$number_stu)
+
+
+# Create dummywt for HLM
+pisa.sel2$dummywt <- 1
+
+
+
+
+############################################
+#### End of data preparation ##############
+###########################################
+
+
 
 
 
@@ -212,28 +291,6 @@ summary2(variable = "sc048q01na", data = pisa.sel)
 # Progn_de
 summary2(data = pisa.sel, variable = "progn_de")
 
-
-##################################
-## Prepare complete case analyis
-#################################
-
-#delete cases with missing values
-omitted2018 <- getAttributes(sdf,'omittedLevels')
-
-# save full dataset separately
-pisa.full <- pisa.sel
-
-# Create copy for regressions
-pisa.sel2 <- pisa.sel
-
-
-for (i in 1:ncol(pisa.sel2)) {
-  pisa.sel2 <- pisa.sel2[!pisa.sel2[,i] %in% omitted2018,]
-}
-
-
-length(pisa.sel2$cntstuid) # 2034 obs
-
 ######################################################
 ## Run descriptive statistics for complete cases vs full dataset
 #######################################################
@@ -259,6 +316,7 @@ summary2(data = pisa.sel, variable = "st004d01t", weightVar = NULL)
 # Immig
 summary2(data = pisa.sel2, variable = "immig", weightVar = NULL)
 summary2(data = pisa.sel, variable = "immig", weightVar = NULL)
+summary2(data = pisa.sel, variable = "immig", weightVar = NULL, omittedLevels = T)
 
 
 # st001d01t
@@ -273,7 +331,7 @@ summary2(data = pisa.sel, variable = "st001d01t_ad", weightVar = NULL)
 
 # repeatgrade
 summary2(data = pisa.sel2, variable = "repeatgrade", weightVar = NULL)
-summary2(data = pisa.sel, variable = "repeatgrade", weightVar = NULL)
+summary2(data = pisa.sel, variable = "repeatgrade", weightVar = NULL, omittedLevels = T)
 
 
 # hisei
