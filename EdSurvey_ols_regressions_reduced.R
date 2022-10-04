@@ -10,30 +10,32 @@ library(sjPlot) # For plotting models only lme4
 library(jtools) # For plotting models only lme4
 
 
+
 #####################################
 # Read data 
 ###################################
 
 # Path needs to be adjusted by user
 sdf <- readPISA(path = "C:/Users/bergm/OneDrive/Dokumente/Applied Data Science/05_Frühjahr 2022/Project Consulting Course/Data/PISA/2018",countries="DEU")
+#sdf <- readPISA(path = "C:/Users/isr/Desktop/Training IPSDS/Master project/pisa2018/data",countries="DEU")
 
 
-global.scales <- c("GCSELFEFF",#Self-efficacy regarding global issues (WLE)
-                              "GCAWARE",#Student's awareness of global issues (WLE)
-                              "PERSPECT",#Perspective-taking (WLE)
-                              "COGFLEX",#Cognitive flexibility/adaptability (WLE)
-                              "AWACOM",#Awareness of intercultural communication (WLE)
-                              "INTCULT",#Student's interest in learning about other cultures (WLE)
-                              "RESPECT",#Respect for people from other cultures (WLE)
-                              "GLOBMIND",#Global-mindedness (WLE)
-                              "ATTIMM")
+global.scales <- c("GCSELFEFF")#Self-efficacy regarding global issues (WLE)
+#  "GCAWARE",#Student's awareness of global issues (WLE)
+# "PERSPECT",#Perspective-taking (WLE)
+#  "COGFLEX",#Cognitive flexibility/adaptability (WLE)
+#  "AWACOM",#Awareness of intercultural communication (WLE)
+#  "INTCULT",#Student's interest in learning about other cultures (WLE)
+#  "RESPECT",#Respect for people from other cultures (WLE)
+#  "GLOBMIND",#Global-mindedness (WLE)
+#  "ATTIMM")
 global.scales <- str_to_lower(global.scales)
 
 pv <- c("PV1READ" , "PV2READ", "PV3READ", "PV4READ", "PV5READ" , "PV6READ", "PV7READ", "PV8READ", "PV9READ" , "PV10READ")
 pv <- str_to_lower(pv)
 
 
-id.vars <- c("cntschid","cntstuid")
+id.vars <- c("cntryid","cnt","cntschid","cntstuid")
 
 
 wt.vars <- c("w_fstuwt", #FINAL TRIMMED NONRESPONSE ADJUSTED STUDENT WEIGHT
@@ -41,23 +43,23 @@ wt.vars <- c("w_fstuwt", #FINAL TRIMMED NONRESPONSE ADJUSTED STUDENT WEIGHT
              "w_fstuwt_sch_sum") # Sum of W_FSTUW
 
 control.vars <- c("ST001D01T",#Grade
-                             "ST004D01T",#Student (Standardized) Gender
-                             "HISCED",#Highest Education of parents (ISCED)
-                             "HISEI",#Highest International Socio-Economic Index of Occupational Status
-                             "PARED",#Index highest parental education in years of schooling
-                             "IMMIG",#Index Immigration status
-                             "ST127Q01TA",#Have you ever repeated a <grade>? At <ISCED 1>
-                             "ST127Q02TA",#Have you ever repeated a <grade>? At <ISCED 2>
-                             "repeatgrade",
-                             "progn",  # School classification
-                             "SC048Q01NA") # Percentage <national modal grade for 15-year-olds>: Students whose <heritage language> is different from <test language
+                  "ST004D01T",#Student (Standardized) Gender
+                  # "HISCED",#Highest Education of parents (ISCED)
+                  "HISEI",#Highest International Socio-Economic Index of Occupational Status
+                  #  "PARED",#Index highest parental education in years of schooling
+                  "IMMIG",#Index Immigration status
+                  #  "ST127Q01TA",#Have you ever repeated a <grade>? At <ISCED 1>
+                  #  "ST127Q02TA",#Have you ever repeated a <grade>? At <ISCED 2>
+                  "repeatgrade",
+                  "progn",  # School classification
+                  "SC048Q01NA") # Percentage <national modal grade for 15-year-olds>: Students whose <heritage language> is different from <test language
 
 control.vars <- str_to_lower(control.vars)
 
 ### Get Data
 
 pisa.sel <- EdSurvey::getData(data = sdf,
-                               varnames = c(id.vars,wt.vars,global.scales,control.vars,pv),
+                              varnames = c(id.vars,wt.vars,global.scales,control.vars,pv),
                               omittedLevels = F, # Do not drop omitted levels
                               returnJKreplicates = T) # Return replicate weights
 
@@ -163,17 +165,26 @@ pisa.sel$progn_de <- relevel(pisa.sel$progn_de, ref="Hauptschule")
 ####### mutate ST001D01T",#Grade  -  Tatjana #########
 pisa.sel<- pisa.sel%>%
   mutate(#st001d01t = as.numeric(st001d01t),
-         st001d01t_ad = factor(case_when(st001d01t <= 9 ~ "Grade 7-9",
-                                         st001d01t >= 10 ~ "Grade 10-12")))
+    st001d01t_ad = factor(case_when(st001d01t <= 9 ~ "Grade 7-9",
+                                    st001d01t >= 10 ~ "Grade 10-12")))
 
 # Relevel to baseline Hauptschule
 pisa.sel$st001d01t_ad <- relevel(pisa.sel$st001d01t_ad, ref="Grade 7-9")
 
 
 # calculate school hisei
-pisa.sel <- pisa.sel %>% group_by(cntschid) %>% mutate(avg_hisei = mean(hisei, na.rm = TRUE)) %>% ungroup()
+# hisei_gc = group-mean centered
+pisa.sel <- pisa.sel %>% group_by(cntschid) %>% mutate(avg_hisei = mean(hisei, na.rm = TRUE),
+                                                       hisei_gc = hisei - avg_hisei) %>% ungroup()
 
 
+# Check group mean centering
+pisa.hisei <- pisa.sel %>% select(hisei, avg_hisei, hisei_gc)
+
+# Show school average hisei
+pisa.sel %>% 
+  group_by(cntschid) %>% 
+  summarise(avg_hisei = mean(hisei, na.rm = TRUE)) %>% ungroup
 
 ##########################################################
 ######### Rebinding attributes to use EdSurvey functions
@@ -183,9 +194,10 @@ pisa.sel <- rebindAttributes(pisa.sel, sdf)
 
 #############################################
 # Test - get summary statistics for new variables
- 
+
 summary2(data = pisa.sel, variable = "progn_de")
 summary2(data = pisa.sel, variable = "st001d01t_ad")
+summary2(data = pisa.sel, variable = "avg_hisei")
 # EdSurvey functions work fine
 
 
@@ -209,7 +221,7 @@ for (i in 1:ncol(pisa.sel2)) {
 
 
 full.cases <- pisa.sel2
-length(full.cases) # 2034 obs
+length(full.cases$cntstuid) # 2989 obs
 
 # Number of schools
 length(unique(pisa.sel2$cntschid))
@@ -218,6 +230,12 @@ length(unique(pisa.sel2$cntschid))
 t <- pisa.sel2 %>% group_by(cntschid) %>% summarize(number_stu = n()) %>% ungroup
 summary(t$number_stu)
 sd(t$number_stu)
+
+
+# Create dummywt for HLM
+pisa.sel2$dummywt <- 1
+
+
 
 
 ############################################
@@ -241,7 +259,7 @@ summary(lm.gcselfeff)
 # Using all scales
 lm.global.scales <- lm.sdf(formula = pv1read ~ gcselfeff + gcaware + perspect + cogflex + awacom + intcult + respect +globmind +  attimm, data = pisa.sel2)
 summary(lm.global.scales)
-# Multiple R-squared: 0.1926
+# Multiple R-squared: 0.1012
 
 
 #####################################################################
@@ -269,12 +287,12 @@ levelsSDF(varnames = "st001d01t", data = pisa.sel2)
 
 lm.grade <- lm.sdf(formula = pv1read ~ st001d01t, data = pisa.sel2)
 summary(lm.grade) # compared to baselevel grade 7
-# Multiple R-squared: 0.0946
+# Multiple R-squared: 0.123
 
  
 lm.grade_ad<- lm.sdf(formula = pv1read ~ st001d01t_ad, data = pisa.sel2)
 summary(lm.grade_ad) # compared to baselevel grade 7
-# Multiple R-squared: 0.0591
+# Multiple R-squared: 0.0815
 
 
 
@@ -284,14 +302,14 @@ levelsSDF(varnames = "st004d01t", data = pisa.sel2)
 
 lm.gender <- lm.sdf(pv1read ~ st004d01t, data = pisa.sel2)
 summary(lm.gender)
-# Multiple R-squared: 0.0104
+# Multiple R-squared: 0.0112
 
 # hisei
 EdSurvey::summary2(variable = "hisei", data = pisa.sel2)
 
 lm.hisei <- lm.sdf(formula = pv1read ~ hisei, data = pisa.sel2)
 summary(lm.hisei)
-# Multiple R-squared: 0.1416
+# Multiple R-squared: 0.1438
 
 # immig
 levelsSDF(varnames = "immig", data = pisa.sel2)
@@ -305,14 +323,14 @@ levelsSDF(varnames = "repeatgrade", data = pisa.sel2)
 
 lm.repeatgrade <- lm.sdf(formula = pv1read ~ repeatgrade, data = pisa.sel2)
 summary(lm.repeatgrade)
-# Multiple R-squared: 0.0364
+# Multiple R-squared: 0.0727
 
 # sc048q01na - pct of students whose heritage language is different from test language
 summary2(variable = "sc048q01na", data = pisa.sel2)
 
 lm.sc048 <- lm.sdf(formula = pv1read ~ sc048q01na, data = pisa.sel2)
 summary(lm.sc048)
-# Multiple R-squared: 0.0648
+# Multiple R-squared: 0.0816
 
 
 
@@ -324,7 +342,7 @@ control.vars
 lm.control.vars <- lm.sdf(pv1read ~ progn_de + st001d01t_ad + st004d01t + hisei + immig + repeatgrade + sc048q01na, data = pisa.sel2 )
 
 summary(lm.control.vars)
-# Multiple R-squared:  0.3968
+# Multiple R-squared:  0.4311
 
 
 ######################################################
@@ -335,7 +353,7 @@ summary(lm.control.vars)
 lm.gcselfeff.controlled <- lm.sdf(pv1read ~ gcselfeff + progn_de + st001d01t_ad + st004d01t + hisei + immig + repeatgrade + sc048q01na , data = pisa.sel2)
 summary(lm.gcselfeff.controlled)
 # Effect still significant
-# Multiple R-squared: 0.4043
+# Multiple R-squared: 0.449
 
 
 ###################### 
