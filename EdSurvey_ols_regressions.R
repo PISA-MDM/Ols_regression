@@ -1,5 +1,5 @@
 ## EdSurvey Regression analyses 
-# In the following section OLS regression will be performed.
+# In the following section OLS regression (chapter 5.2) will be performed.
 
 # Download necessary packages if not installed
 list.of.packages <- c("EdSurvey", "lme4","WeMix","flexplot","tidyverse","sjPlot","jtools")
